@@ -1,11 +1,9 @@
 <h1 align="center">
-  image coming
-  <br />
   create-dogstack-app
 </h1>
 
 <h4 align="center">
-  :dog2: :wrench: :construction: create a new [dogstack](https://github.com/root-systems/dogstack) app and scaffold out files
+  :dog2: :wrench: :construction: create a new <a href='https://github.com/root-systems/dogstack'>dogstack</a> app and scaffold out files
 </h4>
 
 ## cli usage
