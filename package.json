@@ -1,0 +1,36 @@
+{
+  "name": "create-dogstack-app",
+  "version": "0.0.1",
+  "description": "create a new dogstack app and scaffold files + folders",
+  "bin": {
+    "create-dogstack-app": "./bin.js",
+    "cda": "./bin.js"
+  },
+  "scripts": {
+    "deps": "dependency-check . && dependency-check . --extra --no-dev",
+    "start": "node .",
+    "test": "standard && npm run deps"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/root-systems/create-dogstack-app.git"
+  },
+  "author": "Root Systems <hello@rootsystems.nz>",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/root-systems/create-dogstack-app/issues"
+  },
+  "homepage": "https://dogstack.js.org",
+  "dependencies": {
+    "dedent": "^0.7.0",
+    "inquirer": "^5.1.0",
+    "minimist": "^1.2.0",
+    "mkdirp": "^0.5.1",
+    "run-parallel": "^1.1.7"
+  },
+  "devDependencies": {
+    "dependency-check": "^2.9.1",
+    "standard": "^10.0.3",
+    "tape": "^4.8.0"
+  }
+}
