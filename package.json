@@ -22,8 +22,10 @@
   },
   "homepage": "https://dogstack.js.org",
   "dependencies": {
+    "bulk-require": "^1.0.1",
     "dedent": "^0.7.0",
     "inquirer": "^5.1.0",
+    "lodash": "^4.17.5",
     "minimist": "^1.2.0",
     "mkdirp": "^0.5.1",
     "run-parallel": "^1.1.7"

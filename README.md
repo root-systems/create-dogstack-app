@@ -13,7 +13,8 @@ $ npx create-dogstack-app <command>
 ```
 
 where `command` may be one of:
+- `app`
 - `topic`
 
 yet to be implemented:
-- `app`
+- `type` ?

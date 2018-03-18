@@ -5,7 +5,8 @@ const argv = minimist(process.argv.slice(2))
 const dedent = require('dedent')
 const inquirer = require('inquirer')
 
-const createTopic = require('./createTopic')
+const createTopic = require('./commands/createTopic')
+const createApp = require('./commands/createApp')
 
 const promptText = `
   Please provide a valid command:
@@ -23,11 +24,10 @@ const promptText = `
 
   switch (cmd) {
     case 'app':
-      console.log('not yet implemented')
-      // createApp(arg)
+      createApp({ appName: arg })(done)
       break
     case 'topic':
-      createTopic(arg)
+      createTopic({ topicName: arg })(done)
       break
     default:
       prompt()
@@ -48,5 +48,15 @@ const promptText = `
       const command = answers.command
       main({ _: [command] })
     })
+  }
+
+  function done (err, res) {
+    if (err) {
+      console.log('Aborting. The following error occured:')
+      console.log('  ' + err.message + '\n')
+      process.exitcode = 1
+    } else {
+      console.log(res)
+    }
   }
 })(argv)
