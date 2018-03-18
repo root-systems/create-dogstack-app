@@ -28,7 +28,8 @@
     "lodash": "^4.17.5",
     "minimist": "^1.2.0",
     "mkdirp": "^0.5.1",
-    "run-parallel": "^1.1.7"
+    "run-parallel": "^1.1.7",
+    "run-series": "^1.1.6"
   },
   "devDependencies": {
     "dependency-check": "^2.9.1",

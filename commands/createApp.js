@@ -5,6 +5,8 @@ const mkdirp = require('mkdirp')
 const parallel = require('run-parallel')
 const bulk = require('bulk-require')
 const map = require('lodash/map')
+const series = require('run-series')
+const exec = require('child_process').exec
 
 const createTopic = require('./createTopic')
 const coreTemplatesDir = path.resolve(__dirname, '../templates/core')
@@ -38,11 +40,16 @@ module.exports = function createApp ({ appName, dir }) {
           cb(err)
         } else {
           const topicName = 'dogs'
-          // // TODO: IK: currently the app topic won't have locales, favicon.ico, themes etc... need to think about how to create them / where to put them
-          parallel([
-            createTopic({ topicName: 'app', dir: path.join(dir, 'app') }),
-            createTopic({ topicName, dir: path.join(dir, topicName) }),
-            createCore({ topicName, dir, templates: coreTemplates })
+          // TODO: IK: currently the app topic won't have locales, favicon.ico, themes etc... need to think about how to create them / where to put them
+          series([
+            function (cb) {
+              parallel([
+                createTopic({ topicName: 'app', dir: path.join(dir, 'app') }),
+                createTopic({ topicName, dir: path.join(dir, topicName) }),
+                createCore({ appName, dir, templates: coreTemplates })
+              ], cb)
+            },
+            installPackages({ dir })
           ], cb)
         }
       })
@@ -50,7 +57,7 @@ module.exports = function createApp ({ appName, dir }) {
   }
 }
 
-function createCore ({ topicName, dir, templates }) {
+function createCore ({ appName, dir, templates }) {
   return function (cb) {
     parallel(
       map(templates, (templateFn, name) => {
@@ -63,7 +70,7 @@ function createCore ({ topicName, dir, templates }) {
               if (err) {
                 cb(err)
               } else {
-                createCore({ topicName, dir: subDir, templates: templateFn })(cb)
+                createCore({ appName, dir: subDir, templates: templateFn })(cb)
               }
             })
           } else {
@@ -71,7 +78,7 @@ function createCore ({ topicName, dir, templates }) {
             // cause what about .test.js files in the future?
             const filename = name.includes('.') ? name : `${name}.js`
             const filePath = path.join(dir, filename)
-            const template = templateFn(topicName)
+            const template = templateFn(appName)
             fs.writeFile(filePath, template, function (err) {
               if (err) return cb(err)
               cb(null, name)
@@ -81,5 +88,25 @@ function createCore ({ topicName, dir, templates }) {
       }),
       cb
     )
+  }
+}
+
+function installPackages ({ dir }) {
+  return function (cb) {
+    console.log('Installing packages...')
+    try {
+      const prevDir = process.cwd()
+      process.chdir(dir)
+      exec('npm install', function (err) {
+        if (err) {
+          cb(err)
+        } else {
+          process.chdir(prevDir)
+          cb(null, 'Packages installed successfully!')
+        }
+      })
+    } catch (err) {
+      cb(err)
+    }
   }
 }
