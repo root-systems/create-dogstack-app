@@ -8,7 +8,7 @@ const map = require('lodash/map')
 
 const createTopic = require('./createTopic')
 const coreTemplatesDir = path.resolve(__dirname, '../templates/core')
-const coreTemplates = bulk(coreTemplatesDir, '*.js')
+const coreTemplates = bulk(coreTemplatesDir, '**/*.js')
 
 /*
 - Creates a folder for a dogstack app
@@ -42,7 +42,7 @@ module.exports = function createApp ({ appName, dir }) {
           parallel([
             createTopic({ topicName: 'app', dir: path.join(dir, 'app') }),
             createTopic({ topicName, dir: path.join(dir, topicName) }),
-            createCore({ topicName, dir })
+            createCore({ topicName, dir, templates: coreTemplates })
           ], cb)
         }
       })
@@ -50,17 +50,33 @@ module.exports = function createApp ({ appName, dir }) {
   }
 }
 
-function createCore ({ topicName, dir }) {
+function createCore ({ topicName, dir, templates }) {
   return function (cb) {
     parallel(
-      map(coreTemplates, (templateFn, name) => {
+      map(templates, (templateFn, name) => {
         return function (cb) {
-          const filePath = path.join(dir, `${name}.js`)
-          const template = templateFn(topicName)
-          fs.writeFile(filePath, template, function (err) {
-            if (err) return cb(err)
-            cb(null, name)
-          })
+          // TODO: IK: a more elegant way of guarding this
+          if (Object.keys(templateFn).length > 0 && name !== 'index') {
+            // a folder with core files at some sub-level
+            const subDir = path.join(dir, name)
+            mkdirp(subDir, function (err) {
+              if (err) {
+                cb(err)
+              } else {
+                createCore({ topicName, dir: subDir, templates: templateFn })(cb)
+              }
+            })
+          } else {
+            // TODO: IK: a more robust way of identifying files that aren't .js, some regex or something
+            // cause what about .test.js files in the future?
+            const filename = name.includes('.') ? name : `${name}.js`
+            const filePath = path.join(dir, filename)
+            const template = templateFn(topicName)
+            fs.writeFile(filePath, template, function (err) {
+              if (err) return cb(err)
+              cb(null, name)
+            })
+          }
         }
       }),
       cb
