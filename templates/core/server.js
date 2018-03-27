@@ -4,7 +4,7 @@ module.exports = function (topic) {
   return dedent`
     const services = [
       require('dogstack-agents/service'),
-      require('./dogs/service')
+      require('./dogs/services/dogs')
     ]
 
     export default {

@@ -40,7 +40,6 @@ module.exports = function createApp ({ appName, dir }) {
           cb(err)
         } else {
           const topicName = 'dogs'
-          // TODO: IK: currently the app topic won't have locales, favicon.ico, themes etc... need to think about how to create them / where to put them
           series([
             function (cb) {
               parallel([
@@ -49,7 +48,12 @@ module.exports = function createApp ({ appName, dir }) {
                 createCore({ appName, dir, templates: coreTemplates })
               ], cb)
             },
-            installPackages({ dir })
+            function (cb) {
+              series([
+                appendToAppTopic({ dir: path.join(dir, 'app') }),
+                installPackages({ dir })
+              ], cb)
+            }
           ], cb)
         }
       })
@@ -107,6 +111,41 @@ function installPackages ({ dir }) {
       })
     } catch (err) {
       cb(err)
+    }
+  }
+}
+
+// TODO: IK: this is broken out to allow creating the 'app' topic to use createTopic
+// consider whether these folders / files might be better somewhere else in future
+function appendToAppTopic ({ dir }) {
+  const appTemplatesDir = path.resolve(__dirname, '../templates/app')
+  const appTemplates = bulk(appTemplatesDir, '**/*.js')
+
+  return function (cb) {
+    parallel([
+      createCore({ appName: null, dir, templates: appTemplates }),
+      copyNonJS({ dir })
+    ], cb)
+  }
+
+  function copyNonJS ({ dir }) {
+    return function (cb) {
+      // TODO: IK: only handling the favicon hardcoded atm, maybe theres also a better way to do this
+      const file = 'favicon.ico'
+      const reader = fs.createReadStream(path.join(appTemplatesDir, file))
+      const writer = fs.createWriteStream(path.join(dir, file))
+      writer.on('finish', function () {
+        cb(null)
+      })
+
+      reader.on('error', function (err) {
+        cb(err)
+      })
+      writer.on('error', function (err) {
+        cb(err)
+      })
+
+      reader.pipe(writer)
     }
   }
 }
