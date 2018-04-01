@@ -46,7 +46,7 @@ module.exports = function (name) {
         "fela": "^5.0.1",
         "material-ui": "^0.19.1",
         "pg": "^6.1.5",
-        "ramda": "^0.23.0",
+        "ramda": "^0.24.0",
         "react": "^15.5.4",
         "react-fela": "^6.0.3",
         "react-redux": "^4.4.5",
