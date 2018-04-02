@@ -6,7 +6,7 @@ module.exports = function (topic) {
     import { routerReducer } from 'react-router-redux'
 
     import { updater as agents } from 'dogstack-agents'
-    import { updater as dogs } from './dogs'
+    import { updater as dogs } from './dogs/dux/dogs'
 
     const router = updateStateAt('router', reducerToUpdater(routerReducer))
 

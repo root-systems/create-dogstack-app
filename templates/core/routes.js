@@ -6,9 +6,10 @@ module.exports = function (topic) {
     import React from 'react'
 
     // Top Level Containers
+    import App from './app/containers/App'
     import Home from './app/containers/Home'
     import DogsContainer from './dogs/containers/Dogs'
-    import DogContainer from './dogs/containers/Dog'
+    //import DogContainer from './dogs/containers/Dog'
 
     import {
       SignIn,
@@ -76,11 +77,6 @@ module.exports = function (topic) {
           selector: getIsAuthenticated,
           icon: 'fa fa-paw'
         }
-      },
-      {
-        name: 'dog',
-        path: '/d/:dogId',
-        Component: UserIsAuthenticated(DogContainer)
       }
     ]
   `
