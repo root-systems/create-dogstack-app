@@ -5,13 +5,15 @@ const argv = minimist(process.argv.slice(2))
 const dedent = require('dedent')
 const inquirer = require('inquirer')
 
-const createTopic = require('./commands/createTopic')
 const createApp = require('./commands/createApp')
+const createTopic = require('./commands/createTopic')
+const createType = require('./commands/createType')
 
 const promptText = `
   Please provide a valid command:
   - app
   - topic
+  - type
 
   e.g. $ npx create-dogstack-app topic
 
@@ -29,6 +31,9 @@ const promptText = `
     case 'topic':
       createTopic({ topicName: arg })(done)
       break
+    case 'type':
+      createType({ typeName: arg })(done)
+      break
     default:
       prompt()
   }
@@ -41,7 +46,8 @@ const promptText = `
       message: 'Choose a valid command:',
       choices: [
         'app',
-        'topic'
+        'topic',
+        'type'
       ]
     }])
     .then(function (answers) {

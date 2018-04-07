@@ -63,7 +63,7 @@ function createTypeFolder ({ typeName, dir, topicName, templateFn }) {
     const folderPath = path.join(dir, folderName)
     mkdirp(folderPath, function (err) {
       if (err) cb(err)
-      createType({ typeName, folderName, folderPath, topicName, template: templateFn(topicName) }, cb)
+      createType({ typeName, folderName, folderPath, topicName, template: templateFn(topicName) })(cb)
     })
   }
 }
