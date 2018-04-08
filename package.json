@@ -1,6 +1,6 @@
 {
   "name": "create-dogstack-app",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "create a new dogstack app and scaffold files + folders",
   "bin": {
     "create-dogstack-app": "./bin.js",
