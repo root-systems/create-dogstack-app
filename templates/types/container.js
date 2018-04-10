@@ -1,23 +1,24 @@
 const dedent = require('dedent')
 
-module.exports = function (topic) {
+// TODO: IK: consider prompting the user if they are creating this container through createType to select existing component, getter, actions to wire up to
+module.exports = function (typeName) {
   return dedent`
     import { connect as connectFeathers } from 'feathers-action-react'
     import { compose } from 'recompose'
 
-    import { actions as ${topic}Actions } from '../../${topic}/dux/${topic}'
+    import { actions as ${typeName}Actions } from '../../${typeName}/dux/${typeName}'
 
-    import get${topic}Props from '../getters/get${topic}Props'
-    import ${topic} from '../components/${topic}'
+    import get${typeName}Props from '../getters/get${typeName}Props'
+    import ${typeName} from '../components/${typeName}'
 
     export default compose(
       connectFeathers({
-        selector: get${topic}Props,
+        selector: get${typeName}Props,
         actions: {
-          ${topic}Actions
+          ${typeName}Actions
         },
         query: []
       })
-    )(${topic})
+    )(${typeName})
   `
 }

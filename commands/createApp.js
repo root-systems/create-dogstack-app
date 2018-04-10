@@ -19,7 +19,7 @@ const coreTemplates = bulk(coreTemplatesDir, '**/*.js')
 - App should be ready to run
 */
 
-module.exports = function createApp ({ appName, dir }) {
+module.exports = function createApp ({ appName, appDir }) {
   return function (cb) {
     if (!appName) {
       inquirer.prompt([{
@@ -30,12 +30,12 @@ module.exports = function createApp ({ appName, dir }) {
       }])
       .then(function (answers) {
         appName = answers.input
-        createApp({ appName, dir })(cb)
+        createApp({ appName, appDir })(cb)
       })
     } else {
-      if (!dir) dir = path.relative(process.cwd(), appName)
+      if (!appDir) appDir = path.relative(process.cwd(), appName)
 
-      mkdirp(dir, function (err) {
+      mkdirp(appDir, function (err) {
         if (err) {
           cb(err)
         } else {
@@ -43,15 +43,15 @@ module.exports = function createApp ({ appName, dir }) {
           series([
             function (cb) {
               parallel([
-                createTopic({ topicName: 'app', dir: path.join(dir, 'app') }),
-                createTopic({ topicName, dir: path.join(dir, topicName) }),
-                createCore({ appName, dir, templates: coreTemplates })
+                createTopic({ topicName: 'app', appDir, dir: path.join(appDir, 'app') }),
+                createTopic({ topicName, appDir, dir: path.join(appDir, topicName) }),
+                createCore({ appName, dir: appDir, templates: coreTemplates })
               ], cb)
             },
             function (cb) {
               series([
-                appendToAppTopic({ dir: path.join(dir, 'app') }),
-                installPackages({ dir })
+                appendToAppTopic({ dir: path.join(appDir, 'app') }),
+                installPackages({ appDir })
               ], cb)
             }
           ], cb)
@@ -95,12 +95,12 @@ function createCore ({ appName, dir, templates }) {
   }
 }
 
-function installPackages ({ dir }) {
+function installPackages ({ appDir }) {
   return function (cb) {
     console.log('Installing packages...')
     try {
       const prevDir = process.cwd()
-      process.chdir(dir)
+      process.chdir(appDir)
       exec('npm install', function (err) {
         if (err) {
           cb(err)

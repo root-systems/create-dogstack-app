@@ -9,11 +9,9 @@ module.exports = function (topic) {
     addLocaleData([...en])
 
     import appLocale from './app/locales/app'
-    import dogsLocale from './dogs/locales/dogs'
 
     const locales = [
-      appLocale,
-      dogsLocale
+      appLocale
     ]
 
     const messagesByLocale = reduce(mergeDeepRight, {}, locales)

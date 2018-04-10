@@ -1,6 +1,6 @@
 const dedent = require('dedent')
 
-module.exports = function (topic) {
+module.exports = function (typeName) {
   return dedent`
     const feathersKnex = require('feathers-knex')
 
@@ -8,7 +8,7 @@ module.exports = function (topic) {
       const app = this
       const db = app.get('db')
 
-      const name = '${topic}'
+      const name = '${typeName}'
       const options = { Model: db, name }
 
       app.use(name, feathersKnex(options))

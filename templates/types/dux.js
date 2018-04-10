@@ -1,10 +1,10 @@
 const dedent = require('dedent')
 
-module.exports = function (topic) {
+module.exports = function (typeName) {
   return dedent`
     import createModule from 'feathers-action'
 
-    const module = createModule('${topic}')
+    const module = createModule('${typeName}')
 
     export const actions = module.actions
     export const updater = module.updater
