@@ -1,7 +1,7 @@
 const dedent = require('dedent')
 
-module.exports = function (topic) {
+module.exports = function (typeName) {
   return dedent`
-    export default (state) => state.${topic}
+    export default (state) => state.${typeName}
   `
 }

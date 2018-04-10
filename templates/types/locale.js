@@ -1,10 +1,10 @@
 const dedent = require('dedent')
 
-module.exports = function (topic) {
+module.exports = function (typeName) {
   return dedent`
     export default {
       en: {
-        "${topic}.name": "${topic}"
+        "${typeName}.name": "${typeName}"
       }
     }
   `

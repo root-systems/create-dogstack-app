@@ -12,23 +12,28 @@ const typesTemplatesDir = path.resolve(__dirname, '../templates/types')
 const typesTemplates = bulk(typesTemplatesDir, '*.js')
 const templateOptions = keys(typesTemplates)
 
+const wireTypeToUpdater = require('./wiring/updater')
+const wireTypeToEpic = require('./wiring/epic')
+const wireTypeToIntl = require('./wiring/intl')
+const wireTypeToServer = require('./wiring/server')
+
 /*
 - Creates a type file
 */
 
-// TODO: IK: change topicName here to fileName or something similar, think it makes more sense
-module.exports = function createType ({ typeName, folderName, folderPath, topicName, template }) {
+// TODO: IK: too many args here, probably a better more modular way
+module.exports = function createType ({ appDir, whichType, folderName, folderPath, topicName, template, typeName }) {
   return function (cb) {
-    if (typeName && !includes(templateOptions, typeName)) {
-      cb(new Error(`${typeName} is an unsupported type: please pick one of ${templateOptions.join(', ')}`))
-    } else if (!typeName) {
-      const startDir = process.cwd()
+    if (whichType && !includes(templateOptions, whichType)) {
+      cb(new Error(`${whichType} is an unsupported type: please pick one of ${templateOptions.join(', ')}`))
+    } else if (!whichType) {
+      const appDir = process.cwd()
 
-      fs.readdir(startDir, function (err, files) {
+      fs.readdir(appDir, function (err, files) {
         if (err) cb(err)
 
         const topicPaths = files
-        .map((name) => path.join(startDir, name))
+        .map((name) => path.join(appDir, name))
         .filter((file) => fs.lstatSync(file).isDirectory()) // TODO: IK: use async lstat?
         .filter((dir) => {
           const base = path.basename(dir)
@@ -51,35 +56,63 @@ module.exports = function createType ({ typeName, folderName, folderPath, topicN
           }
         ])
         .then(function (answers) {
-          typeName = answers.whichType
+          whichType = answers.whichType
           templateFn = typesTemplates[answers.whichType]
-          folderName = typeName === 'dux' ? typeName : typeName + 's' // pluralize folder names
-          folderPath = path.join(startDir, answers.whichTopic, folderName)
+          folderName = whichType === 'dux' ? whichType : whichType + 's' // pluralize folder names
+          topicName = answers.whichTopic
+          folderPath = path.join(appDir, topicName, folderName)
           return inquirer.prompt([{
             type: 'input',
-            name: 'fileName',
+            name: 'typeName',
             message: `What's the name of the ${answers.whichType}?`,
             validate: (answer) => answer.length >= 1
           }])
         })
         .then(function (answers) {
-          topicName = answers.fileName
+          typeName = answers.typeName
           createType({
-            typeName,
+            appDir,
+            whichType,
             folderName,
             folderPath,
             topicName,
-            template: templateFn(topicName)
+            template: templateFn(typeName),
+            typeName
           })(cb)
         })
       })
     } else {
-      const fileName = typeName === 'getter' ? `get${capitalize(topicName)}Props.js` : `${topicName}.js`
+      // TODO: IK: fix this horrible mutative style along with everything else in this file when refactoring
+      const fileName = whichType === 'getter' ? `get${capitalize(typeName)}Props.js` : `${typeName}.js`
+      const wiringFuncs = determineWiringFuncs({ appDir, topicName, typeName, whichType })
       const filePath = path.join(folderPath, fileName)
-      fs.writeFile(filePath, template, function (err) {
-        if (err) return cb(err)
-        cb(null, folderName)
-      })
+
+      parallel(wiringFuncs.concat([
+        function (cb) {
+          fs.writeFile(filePath, template, function (err) {
+            if (err) return cb(err)
+            cb(null, folderName)
+          })
+        }
+      ]), cb)
     }
+  }
+}
+
+function determineWiringFuncs ({ appDir, topicName, typeName, whichType }) {
+  switch (whichType) {
+    case 'dux':
+      return [
+        wireTypeToEpic({ appDir, topicName, typeName }),
+        wireTypeToUpdater({ appDir, topicName, typeName })
+      ]
+    case 'locale':
+      return [wireTypeToIntl({ appDir, topicName, typeName })]
+    case 'service':
+      return [wireTypeToServer({ appDir, topicName, typeName })]
+    // TODO: IK: case 'routes'
+    // TODO: IK: case 'container' into own topic routes.js file? as an option to the user?
+    default:
+      return []
   }
 }

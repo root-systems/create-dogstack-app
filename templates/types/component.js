@@ -1,6 +1,6 @@
 const dedent = require('dedent')
 
-module.exports = function (topic) {
+module.exports = function (typeName) {
   return dedent`
     import h from 'react-hyperscript'
 
@@ -8,7 +8,7 @@ module.exports = function (topic) {
       const { actions } = props
 
       return h('div', {}, [
-        h('span', {}, 'A new ${topic} component!')
+        h('span', {}, 'A new ${typeName} component!')
       ])
     }
   `

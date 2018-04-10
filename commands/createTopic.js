@@ -3,6 +3,7 @@ const path = require('path')
 const fs = require('fs')
 const mkdirp = require('mkdirp')
 const parallel = require('run-parallel')
+const series = require('run-series')
 const bulk = require('bulk-require')
 const map = require('lodash/map')
 
@@ -19,7 +20,7 @@ N.B.
 - May be called by createApp.
 */
 
-module.exports = function createTopic ({ topicName, dir }) {
+module.exports = function createTopic ({ topicName, appDir, dir }) {
   return function (cb) {
     if (!topicName) {
       inquirer.prompt([{
@@ -31,18 +32,20 @@ module.exports = function createTopic ({ topicName, dir }) {
       .then(function (answers) {
         topicName = answers.input
         dir = path.relative(process.cwd(), topicName)
-        createTopic({ topicName, dir })(cb)
+        appDir = process.cwd()
+        createTopic({ topicName, appDir, dir })(cb)
       })
     } else {
-      if (!dir) dir = path.relative(process.cwd(), topicName)
+      if (!appDir) appDir = process.cwd()
+      if (!dir) dir = path.relative(appDir, topicName)
 
       mkdirp(dir, function (err) {
         if (err) {
           cb(err)
         } else {
           parallel(
-            map(typesTemplates, (templateFn, typeName) => {
-              return createTypeFolder({ typeName, dir, topicName, templateFn })
+            map(typesTemplates, (templateFn, whichType) => {
+              return createTypeFolder({ appDir, whichType, dir, topicName, templateFn })
             }),
             cb
           )
@@ -57,13 +60,13 @@ create a folder for types (i.e. containers, components)
 no real reason to create the folder without also creating a standard type to go in it?
 */
 
-function createTypeFolder ({ typeName, dir, topicName, templateFn }) {
+function createTypeFolder ({ appDir, whichType, dir, topicName, templateFn }) {
   return function (cb) {
-    const folderName = typeName === 'dux' ? typeName : typeName + 's' // pluralize folder names
+    const folderName = whichType === 'dux' ? whichType : whichType + 's' // pluralize folder names
     const folderPath = path.join(dir, folderName)
     mkdirp(folderPath, function (err) {
       if (err) cb(err)
-      createType({ typeName, folderName, folderPath, topicName, template: templateFn(topicName) })(cb)
+      createType({ appDir, whichType, folderName, folderPath, topicName, template: templateFn(topicName), typeName: topicName })(cb)
     })
   }
 }
