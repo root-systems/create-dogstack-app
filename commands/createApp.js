@@ -41,11 +41,11 @@ module.exports = function createApp ({ appName, appDir }) {
         } else {
           const topicName = 'dogs'
           series([
+            createCore({ appName, dir: appDir, templates: coreTemplates }),
             function (cb) {
               parallel([
                 createTopic({ topicName: 'app', appDir, dir: path.join(appDir, 'app') }),
-                createTopic({ topicName, appDir, dir: path.join(appDir, topicName) }),
-                createCore({ appName, dir: appDir, templates: coreTemplates })
+                createTopic({ topicName, appDir, dir: path.join(appDir, topicName) })
               ], cb)
             },
             function (cb) {
