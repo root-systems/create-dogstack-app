@@ -45,6 +45,7 @@ module.exports = function createTopic ({ topicName, appDir, dir }) {
         } else {
           parallel(
             map(typesTemplates, (templateFn, whichType) => {
+              if (whichType === 'migration') return createMigration({ appDir, whichType, topicName, templateFn })
               return createTypeFolder({ appDir, whichType, dir, topicName, templateFn })
             }),
             cb
@@ -68,5 +69,32 @@ function createTypeFolder ({ appDir, whichType, dir, topicName, templateFn }) {
       if (err) cb(err)
       createType({ appDir, whichType, folderName, folderPath, topicName, template: templateFn(topicName), typeName: topicName })(cb)
     })
+  }
+}
+
+// TODO: IK: break this out into a helper somewhere and use it in createType
+function createMigration ({ appDir, whichType, topicName, templateFn }) {
+  return function (cb) {
+    if (topicName === 'app') return cb(null) // early cb if app topic, no need for migration
+    const folderName = 'migrations'
+    const folderPath = path.join(appDir, 'db', folderName)
+    const typeName = `${yyyymmddhhmmss()}_create-${topicName}-table`
+    createType({ appDir, whichType, folderName, folderPath, topicName, template: templateFn(topicName), typeName })(cb)
+  }
+}
+
+// borrowed from https://github.com/tgriesser/knex/blob/843a16799d465c3e65a58b1faab5e906f46c675b/src/migrate/index.js#L428
+function yyyymmddhhmmss() {
+  const d = new Date()
+  return d.getFullYear().toString() +
+    padDate(d.getMonth() + 1) +
+    padDate(d.getDate()) +
+    padDate(d.getHours()) +
+    padDate(d.getMinutes()) +
+    padDate(d.getSeconds())
+
+  function padDate(segment) {
+    segment = segment.toString();
+    return segment[1] ? segment : `0${segment}`;
   }
 }

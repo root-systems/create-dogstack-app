@@ -19,18 +19,35 @@ const coreTemplates = bulk(coreTemplatesDir, '**/*.js')
 - App should be ready to run
 */
 
-module.exports = function createApp ({ appName, appDir }) {
+module.exports = function createApp ({ appName, appDir, doInstallPackages, doRunMigrations }) {
   return function (cb) {
     if (!appName) {
-      inquirer.prompt([{
-        type: 'input',
-        name: 'input',
-        message: "What's the app's name?",
-        validate: (answer) => answer.length >= 1
-      }])
+      inquirer.prompt([
+        {
+          type: 'input',
+          name: 'appName',
+          message: "What's the app's name?",
+          validate: (answer) => answer.length >= 1
+        },
+        {
+          type: 'confirm',
+          name: 'doInstallPackages',
+          message: "Install node modules of the new app when done?"
+        }
+      ])
       .then(function (answers) {
-        appName = answers.input
-        createApp({ appName, appDir })(cb)
+        appName = answers.appName
+        doInstallPackages = answers.doInstallPackages
+        if (!doInstallPackages) return { doRunMigrations: false } // can't run migrations without the database adapater installed
+        return inquirer.prompt([{
+          type: 'confirm',
+          name: 'doRunMigrations',
+          message: "Run migrations on the database of the new app when done? N.B. this will fail if you don't have Postgres installed"
+        }])
+      })
+      .then(function (answers) {
+        doRunMigrations = answers.doRunMigrations
+        createApp({ appName, appDir, doInstallPackages, doRunMigrations })(cb)
       })
     } else {
       if (!appDir) appDir = path.relative(process.cwd(), appName)
@@ -41,18 +58,18 @@ module.exports = function createApp ({ appName, appDir }) {
         } else {
           const topicName = 'dogs'
           series([
+            createCore({ appName, dir: appDir, templates: coreTemplates }),
             function (cb) {
               parallel([
                 createTopic({ topicName: 'app', appDir, dir: path.join(appDir, 'app') }),
-                createTopic({ topicName, appDir, dir: path.join(appDir, topicName) }),
-                createCore({ appName, dir: appDir, templates: coreTemplates })
+                createTopic({ topicName, appDir, dir: path.join(appDir, topicName) })
               ], cb)
             },
             function (cb) {
-              series([
-                appendToAppTopic({ dir: path.join(appDir, 'app') }),
-                installPackages({ appDir })
-              ], cb)
+              const extras = [appendToAppTopic({ dir: path.join(appDir, 'app') })]
+              if (doInstallPackages) extras.push(installPackages({ appDir }))
+              if (doRunMigrations) extras.push(runMigrations({ appDir, appName }))
+              series(extras, cb)
             }
           ], cb)
         }
@@ -112,6 +129,30 @@ function installPackages ({ appDir }) {
     } catch (err) {
       cb(err)
     }
+  }
+}
+
+function runMigrations ({ appDir, appName }) {
+  return function (cb) {
+    console.log('Running migrations...')
+    const prevDir = process.cwd()
+    process.chdir(appDir)
+    exec(`psql -c "CREATE DATABASE ${appName}_development"`, function (err, stdout, stderr) {
+      // TODO: IK: a better way of handling this
+      const dbExistsError = `ERROR:  database "${appName}_development" already exists\n`
+      if (err && stderr !== dbExistsError) {
+        cb(err)
+      } else {
+        exec(`npm run db migrate:latest`, function (err) {
+          if (err) {
+            cb(err)
+          } else {
+            process.chdir(prevDir)
+            cb(null, 'Migrations run successfully!')
+          }
+        })
+      }
+    })
   }
 }
 

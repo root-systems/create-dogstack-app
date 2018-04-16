@@ -47,18 +47,27 @@ module.exports = function createType ({ appDir, whichType, folderName, folderPat
             name: 'whichType',
             message: "Which type?",
             choices: templateOptions
-          },
-          {
-            type: 'list',
-            name: 'whichTopic',
-            message: "Which topic? (if the choices don't make sense, make sure you are running create-dogstack-app from your app's root directory)",
-            choices: topics
           }
         ])
         .then(function (answers) {
           whichType = answers.whichType
           templateFn = typesTemplates[answers.whichType]
+
+          // special case for migrations
+          if (whichType === 'migration') {
+            folderName = 'migrations'
+            return { whichTopic: 'db' }
+          }
+
           folderName = whichType === 'dux' ? whichType : whichType + 's' // pluralize folder names
+          return inquirer.prompt([{
+            type: 'list',
+            name: 'whichTopic',
+            message: "Which topic? (if the choices don't make sense, make sure you are running create-dogstack-app from your app's root directory)",
+            choices: topics
+          }])
+        })
+        .then(function (answers) {
           topicName = answers.whichTopic
           folderPath = path.join(appDir, topicName, folderName)
           return inquirer.prompt([{
@@ -69,7 +78,14 @@ module.exports = function createType ({ appDir, whichType, folderName, folderPat
           }])
         })
         .then(function (answers) {
-          typeName = answers.typeName
+          // special case for migrations
+          // TODO: IK: ideally use the db adaptor lib to create the migration rather than manually like this
+          if (whichType === 'migration') {
+            typeName = `${yyyymmddhhmmss()}_${answers.typeName}`
+          } else {
+            typeName = answers.typeName
+          }
+
           createType({
             appDir,
             whichType,
@@ -114,5 +130,21 @@ function determineWiringFuncs ({ appDir, topicName, typeName, whichType }) {
     // TODO: IK: case 'container' into own topic routes.js file? as an option to the user?
     default:
       return []
+  }
+}
+
+// borrowed from https://github.com/tgriesser/knex/blob/843a16799d465c3e65a58b1faab5e906f46c675b/src/migrate/index.js#L428
+function yyyymmddhhmmss() {
+  const d = new Date()
+  return d.getFullYear().toString() +
+    padDate(d.getMonth() + 1) +
+    padDate(d.getDate()) +
+    padDate(d.getHours()) +
+    padDate(d.getMinutes()) +
+    padDate(d.getSeconds())
+
+  function padDate(segment) {
+    segment = segment.toString();
+    return segment[1] ? segment : `0${segment}`;
   }
 }
