@@ -12,22 +12,19 @@ const typesTemplatesDir = path.resolve(__dirname, '../templates/types')
 const typesTemplates = bulk(typesTemplatesDir, '*.js')
 const templateOptions = keys(typesTemplates)
 
-const wireTypeToUpdater = require('./wiring/updater')
-const wireTypeToEpic = require('./wiring/epic')
-const wireTypeToIntl = require('./wiring/intl')
-const wireTypeToServer = require('./wiring/server')
+const knexMigrationDate = require('./helpers/knexMigrationDate')
+const getWiringFunctions = require('./helpers/getWiringFunctions')
 
 /*
 - Creates a type file
 */
 
-// TODO: IK: too many args here, probably a better more modular way
-module.exports = function createType ({ appDir, whichType, folderName, folderPath, topicName, template, typeName }) {
+module.exports = function createType ({ typeName, typeDir, typeType, topicName, appDir }) {
   return function (cb) {
-    if (whichType && !includes(templateOptions, whichType)) {
-      cb(new Error(`${whichType} is an unsupported type: please pick one of ${templateOptions.join(', ')}`))
-    } else if (!whichType) {
-      const appDir = process.cwd()
+    if (typeType && !includes(templateOptions, typeType)) {
+      cb(new Error(`${typeType} is an unsupported type: please pick one of ${templateOptions.join(', ')}`))
+    } else if (!typeName) {
+      appDir = process.cwd()
 
       fs.readdir(appDir, function (err, files) {
         if (err) cb(err)
@@ -44,22 +41,17 @@ module.exports = function createType ({ appDir, whichType, folderName, folderPat
         inquirer.prompt([
           {
             type: 'list',
-            name: 'whichType',
+            name: 'typeType',
             message: "Which type?",
             choices: templateOptions
           }
         ])
         .then(function (answers) {
-          whichType = answers.whichType
-          templateFn = typesTemplates[answers.whichType]
+          typeType = answers.typeType
 
           // special case for migrations
-          if (whichType === 'migration') {
-            folderName = 'migrations'
-            return { whichTopic: 'db' }
-          }
+          if (typeType === 'migration') return { whichTopic: 'db' }
 
-          folderName = whichType === 'dux' ? whichType : whichType + 's' // pluralize folder names
           return inquirer.prompt([{
             type: 'list',
             name: 'whichTopic',
@@ -69,82 +61,42 @@ module.exports = function createType ({ appDir, whichType, folderName, folderPat
         })
         .then(function (answers) {
           topicName = answers.whichTopic
-          folderPath = path.join(appDir, topicName, folderName)
+          const typeDirName = typeType === 'dux' ? typeType : typeType + 's' // pluralize folder names
+          typeDir = path.join(appDir, topicName, typeDirName)
           return inquirer.prompt([{
             type: 'input',
             name: 'typeName',
-            message: `What's the name of the ${answers.whichType}?`,
+            message: `What's the name of the ${answers.typeType}?`,
             validate: (answer) => answer.length >= 1
           }])
         })
         .then(function (answers) {
           // special case for migrations
           // TODO: IK: ideally use the db adaptor lib to create the migration rather than manually like this
-          if (whichType === 'migration') {
-            typeName = `${yyyymmddhhmmss()}_${answers.typeName}`
+          if (typeType === 'migration') {
+            typeName = `${knexMigrationDate()}_${answers.typeName}`
           } else {
             typeName = answers.typeName
           }
 
-          createType({
-            appDir,
-            whichType,
-            folderName,
-            folderPath,
-            topicName,
-            template: templateFn(typeName),
-            typeName
-          })(cb)
+          createType({ typeName, typeDir, typeType, topicName, appDir })(cb)
         })
       })
     } else {
-      // TODO: IK: fix this horrible mutative style along with everything else in this file when refactoring
-      const fileName = whichType === 'getter' ? `get${capitalize(typeName)}Props.js` : `${typeName}.js`
-      const wiringFuncs = determineWiringFuncs({ appDir, topicName, typeName, whichType })
-      const filePath = path.join(folderPath, fileName)
+      const templateFn = typesTemplates[typeType]
+      const template = typeType === 'migration' ? templateFn(topicName) : templateFn(typeName)
+      const fileName = typeType === 'getter' ? `get${capitalize(typeName)}Props.js` : `${typeName}.js`
+      const wiringFuncs = getWiringFunctions({ typeName, typeType, topicName, appDir })
+      const filePath = path.join(typeDir, fileName)
 
       parallel(wiringFuncs.concat([
         function (cb) {
           fs.writeFile(filePath, template, function (err) {
             if (err) return cb(err)
-            cb(null, folderName)
+            cb(null)
           })
         }
       ]), cb)
     }
-  }
-}
-
-function determineWiringFuncs ({ appDir, topicName, typeName, whichType }) {
-  switch (whichType) {
-    case 'dux':
-      return [
-        wireTypeToEpic({ appDir, topicName, typeName }),
-        wireTypeToUpdater({ appDir, topicName, typeName })
-      ]
-    case 'locale':
-      return [wireTypeToIntl({ appDir, topicName, typeName })]
-    case 'service':
-      return [wireTypeToServer({ appDir, topicName, typeName })]
-    // TODO: IK: case 'routes'
-    // TODO: IK: case 'container' into own topic routes.js file? as an option to the user?
-    default:
-      return []
-  }
-}
-
-// borrowed from https://github.com/tgriesser/knex/blob/843a16799d465c3e65a58b1faab5e906f46c675b/src/migrate/index.js#L428
-function yyyymmddhhmmss() {
-  const d = new Date()
-  return d.getFullYear().toString() +
-    padDate(d.getMonth() + 1) +
-    padDate(d.getDate()) +
-    padDate(d.getHours()) +
-    padDate(d.getMinutes()) +
-    padDate(d.getSeconds())
-
-  function padDate(segment) {
-    segment = segment.toString();
-    return segment[1] ? segment : `0${segment}`;
   }
 }

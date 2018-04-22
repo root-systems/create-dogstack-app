@@ -1,15 +1,18 @@
 const inquirer = require('inquirer')
 const path = require('path')
-const fs = require('fs')
 const mkdirp = require('mkdirp')
 const parallel = require('run-parallel')
 const series = require('run-series')
 const bulk = require('bulk-require')
 const map = require('lodash/map')
+const filter = require('lodash/filter')
 
 const createType = require('./createType')
 const typesTemplatesDir = path.resolve(__dirname, '../templates/types')
 const typesTemplates = bulk(typesTemplatesDir, '*.js')
+const typeTypes = map(typesTemplates, (templateFn, typeType) => typeType)
+
+const knexMigrationDate = require('./helpers/knexMigrationDate')
 
 /*
 - Creates a topic folder
@@ -20,7 +23,7 @@ N.B.
 - May be called by createApp.
 */
 
-module.exports = function createTopic ({ topicName, appDir, dir }) {
+module.exports = function createTopic ({ topicName, topicDir, appDir }) {
   return function (cb) {
     if (!topicName) {
       inquirer.prompt([{
@@ -31,70 +34,54 @@ module.exports = function createTopic ({ topicName, appDir, dir }) {
       }])
       .then(function (answers) {
         topicName = answers.input
-        dir = path.relative(process.cwd(), topicName)
+        topicDir = path.relative(process.cwd(), topicName)
         appDir = process.cwd()
-        createTopic({ topicName, appDir, dir })(cb)
+        createTopic({ topicName, topicDir, appDir })(cb)
       })
     } else {
       if (!appDir) appDir = process.cwd()
-      if (!dir) dir = path.relative(appDir, topicName)
+      if (!topicDir) topicDir = path.relative(appDir, topicName)
 
-      mkdirp(dir, function (err) {
+      mkdirp(topicDir, function (err) {
         if (err) {
           cb(err)
         } else {
-          parallel(
-            map(typesTemplates, (templateFn, whichType) => {
-              if (whichType === 'migration') return createMigration({ appDir, whichType, topicName, templateFn })
-              return createTypeFolder({ appDir, whichType, dir, topicName, templateFn })
-            }),
-            cb
-          )
+          const typeFolders = filter(typeTypes, (typeType) => typeType !== 'migration')
+          parallel([
+            function (cb) {
+              parallel(
+                map(typeFolders, (typeType) => {
+                  // create folders for the types, then the types themselves
+                  const typeDirName = typeType === 'dux' ? typeType : typeType + 's' // pluralize folder names
+                  const typeDir = path.join(topicDir, typeDirName)
+                  return function (cb) {
+                    series([
+                      function (cb) {
+                        mkdirp(typeDir, function (err) {
+                          if (err) {
+                            cb(err)
+                          } else {
+                            cb(null)
+                          }
+                        })
+                      },
+                      createType({ typeName: topicName, typeDir, typeType, topicName, appDir })
+                    ], cb)
+                  }
+                }),
+                cb
+              )
+            },
+            function (cb) {
+              if (topicName === 'app') return cb(null) // early cb if app topic, no need for migration
+              const typeType = 'migration'
+              const typeDir = path.join(appDir, 'db', 'migrations')
+              const typeName = `${knexMigrationDate()}_create-${topicName}-table`
+              createType({ typeName, typeDir, typeType, topicName, appDir })(cb)
+            }
+          ], cb)
         }
       })
     }
-  }
-}
-
-/*
-create a folder for types (i.e. containers, components)
-no real reason to create the folder without also creating a standard type to go in it?
-*/
-
-function createTypeFolder ({ appDir, whichType, dir, topicName, templateFn }) {
-  return function (cb) {
-    const folderName = whichType === 'dux' ? whichType : whichType + 's' // pluralize folder names
-    const folderPath = path.join(dir, folderName)
-    mkdirp(folderPath, function (err) {
-      if (err) cb(err)
-      createType({ appDir, whichType, folderName, folderPath, topicName, template: templateFn(topicName), typeName: topicName })(cb)
-    })
-  }
-}
-
-// TODO: IK: break this out into a helper somewhere and use it in createType
-function createMigration ({ appDir, whichType, topicName, templateFn }) {
-  return function (cb) {
-    if (topicName === 'app') return cb(null) // early cb if app topic, no need for migration
-    const folderName = 'migrations'
-    const folderPath = path.join(appDir, 'db', folderName)
-    const typeName = `${yyyymmddhhmmss()}_create-${topicName}-table`
-    createType({ appDir, whichType, folderName, folderPath, topicName, template: templateFn(topicName), typeName })(cb)
-  }
-}
-
-// borrowed from https://github.com/tgriesser/knex/blob/843a16799d465c3e65a58b1faab5e906f46c675b/src/migrate/index.js#L428
-function yyyymmddhhmmss() {
-  const d = new Date()
-  return d.getFullYear().toString() +
-    padDate(d.getMonth() + 1) +
-    padDate(d.getDate()) +
-    padDate(d.getHours()) +
-    padDate(d.getMinutes()) +
-    padDate(d.getSeconds())
-
-  function padDate(segment) {
-    segment = segment.toString();
-    return segment[1] ? segment : `0${segment}`;
   }
 }
