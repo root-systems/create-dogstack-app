@@ -5,10 +5,16 @@ module.exports = function (topic) {
     import React from 'react'
     import { connect as connectFela } from 'react-fela'
     import { not, pipe, map, values, isNil } from 'ramda'
-    import AppBar from 'material-ui/AppBar'
-    import Drawer from 'material-ui/Drawer'
-    import MenuItem from 'material-ui/MenuItem'
-    import Divider from 'material-ui/Divider'
+    import AppBar from '@material-ui/core/AppBar'
+    import Toolbar from '@material-ui/core/Toolbar'
+    import IconButton from '@material-ui/core/IconButton'
+    import MenuIcon from '@material-ui/icons/Menu'
+    import Drawer from '@material-ui/core/Drawer'
+    import List from '@material-ui/core/List'
+    import ListItem from '@material-ui/core/ListItem'
+    import ListItemIcon from '@material-ui/core/ListItemIcon'
+    import ListItemText from '@material-ui/core/ListItemText'
+    import Divider from '@material-ui/core/Divider'
     import { withState, withHandlers, compose } from 'recompose'
     import { NavLink } from 'react-router-dom'
 
@@ -33,31 +39,40 @@ module.exports = function (topic) {
             icon
           } = navigation
 
+          let item
+
           if (Component) {
-            return (
+            item = (
               <Component
                 key={name}
-                as={MenuItem}
+                as={ListItem}
+                onClick={toggleDrawer}
+                button={true}
                 leftIcon={
                   <i className={icon} aria-hidden="true" />
                 }
               />
             )
+          } else {
+            item = (
+              <NavLink to={path} key={name}>
+                <ListItem button onClick={toggleDrawer}>
+                  <ListItemIcon>
+                    <i className={icon} aria-hidden="true" />
+                  </ListItemIcon>
+                  <FormattedMessage
+                    id={title}
+                    className={styles.labelText}
+                  />
+                </ListItem>
+              </NavLink>
+            )
           }
 
           return (
-            <NavLink to={path} key={name}>
-              <MenuItem
-                leftIcon={
-                  <i className={icon} aria-hidden="true" />
-                }
-              >
-                <FormattedMessage
-                  id={title}
-                  className={styles.labelText}
-                />
-              </MenuItem>
-            </NavLink>
+            <List component="nav">
+            { item }
+            </List>
           )
         }),
         values
@@ -65,27 +80,29 @@ module.exports = function (topic) {
 
       return (
         <div>
-          <AppBar
-            title={
+          <AppBar>
+            <Toolbar>
+              <IconButton onClick={toggleDrawer} color="inherit" aria-label="Menu">
+                <MenuIcon />
+              </IconButton>
               <FormattedMessage
                 id='app.name'
                 className={styles.labelText}
               />
-            }
-            onLeftIconButtonTouchTap={toggleDrawer}
-          />
-          <Drawer open={isDrawerOpen}>
-            <MenuItem
-              leftIcon={
-                <i className="fa fa-bars" aria-hidden="true"/>
-              }
-              onTouchTap={toggleDrawer}
-            >
-              <FormattedMessage
-                id='app.closeMenu'
-                className={styles.labelText}
-              />
-            </MenuItem>
+            </Toolbar>
+          </AppBar>
+          <Drawer open={isDrawerOpen} onClose={toggleDrawer}>
+            <List component="nav">
+              <ListItem button onClick={toggleDrawer}>
+                <ListItemIcon>
+                  <MenuIcon />
+                </ListItemIcon>
+                <FormattedMessage
+                  id='app.closeMenu'
+                  className={styles.labelText}
+                />
+              </ListItem>
+            </List>
             <Divider />
             {mapRouteItems(navigationRoutes)}
             <Divider />
