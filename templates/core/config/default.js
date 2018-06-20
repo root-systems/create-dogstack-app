@@ -6,9 +6,11 @@ module.exports = function (name) {
 
     var config = {
       favicon: 'app/favicon.ico',
+      app: {
+        name: '${name}',
+      },
       api: {
         port: 3001,
-        name: '${name}',
         url: 'http://localhost:3001',
       },
       asset: {

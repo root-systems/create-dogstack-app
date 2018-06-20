@@ -28,6 +28,7 @@ module.exports = function (name) {
             {
               "config": {
                 "keys": [
+                  "app",
                   "api",
                   "asset",
                   "authentication"

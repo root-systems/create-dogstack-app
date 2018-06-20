@@ -3,9 +3,11 @@ const dedent = require('dedent')
 module.exports = function (topic) {
   return dedent`
     module.exports = {
+      app: {
+        name: process.env.APP_NAME
+      },
       api: {
         port: process.env.PORT,
-        name: process.env.APP_NAME,
         url: process.env.API_URL,
       },
       asset: {
