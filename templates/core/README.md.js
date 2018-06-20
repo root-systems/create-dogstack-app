@@ -33,24 +33,12 @@ module.exports = function (name) {
 
     Before we start, please
 
-    - [install `node@8` and `npm@5`](https://dogstack.js.org/guides/how-to-install-js.html)
+    - [install \`node@8\` and \`npm@5\`](https://dogstack.js.org/guides/how-to-install-js.html)
     - [install Git LFS](https://git-lfs.github.com/)
 
-    If you want to use this as a starting ground for your new app, simply fork this repository!
-
-    If you want to develop this example further,
-
-    ```shell
-    git clone git://github.com/root-systems/dogstack-example
-    cd dogstack-example
-    npm install
-    npm run db migrate:latest
-    npm run db seed:run
-    npm run dev
-    ```
     ## Stack
 
-    [`dogstack`](https://dogstack.js.org)! :dog: :dog: :dog:
+    [\`dogstack\`](https://dogstack.js.org)! :dog: :dog: :dog:
 
     ## Folder Structure
 
@@ -64,7 +52,7 @@ module.exports = function (name) {
       - updater.js (combines all updaters)
       - style.js
       - routes.js
-      - `topic` (e.g. `dogs`)
+      - \`topic\` (e.g. \`dogs\`)
         - dux
         - services
         - containers
@@ -75,57 +63,57 @@ module.exports = function (name) {
 
     ### Available Scripts
 
-    ### `npm start`
+    ### \`npm start\`
 
     Starts production server
 
-    ```shell
+    \`\`\`shell
     npm start
-    ```
+    \`\`\`
 
-    ### `npm run dev`
+    ### \`npm run dev\`
 
     Starts development server
 
-    ```shell
+    \`\`\`shell
     npm run dev
-    ```
+    \`\`\`
 
-    ### `npm test`
+    ### \`npm test\`
 
-    Runs [`ava`](https://github.com/avajs/ava) tests
+    Runs [\`ava\`](https://github.com/avajs/ava) tests
 
     Can optionally take a [glob](https://www.npmjs.com/package/glob)
 
-    ```shell
+    \`\`\`shell
     npm test -- './todos/**/*.test.js'
-    ```
+    \`\`\`
 
-    Default glob is `./**/*.test.js` ignoring `node_modules`
+    Default glob is \`./**/*.test.js\` ignoring \`node_modules\`
 
-    ### `npm run lint`
+    ### \`npm run lint\`
 
     Checks for [standard style](http://standardjs.com)
 
     Can optionally take a [glob](https://www.npmjs.com/package/glob)
 
-    ```shell
+    \`\`\`shell
     npm run lint -- './todos/**/*.js'
-    ```
+    \`\`\`
 
-    default glob is `./**/*.js` ignoring `node_modules`
+    default glob is \`./**/*.js\` ignoring \`node_modules\`
 
-    ### `npm run db`
+    ### \`npm run db\`
 
-    Runs [`knex`](http://knexjs.org/#Migrations-CLI) command, with any arguments.
+    Runs [\`knex\`](http://knexjs.org/#Migrations-CLI) command, with any arguments.
 
-    ```shell
+    \`\`\`shell
     npm run db migrate:latest
-    ```
+    \`\`\`
 
-    ```shell
+    \`\`\`shell
     npm run db seed:run
-    ```
+    \`\`\`
 
     ## Developer Notes
 
@@ -133,9 +121,9 @@ module.exports = function (name) {
 
     ### After deploy: migrate on heroku!
 
-    ```shell
+    \`\`\`shell
     heroku run npm run db migrate:latest --app=dogstack-example
-    ```
+    \`\`\`
 
     ## License
 
