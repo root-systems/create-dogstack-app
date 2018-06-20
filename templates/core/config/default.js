@@ -16,6 +16,9 @@ module.exports = function (name) {
         entry: 'browser.js',
         root: 'app/assets',
         url: 'http://localhost:3000/'
+      },
+      log: {
+        level: 'info'
       }
     }
 

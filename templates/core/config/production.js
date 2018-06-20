@@ -14,6 +14,9 @@ module.exports = function (topic) {
         root: process.env.ASSET_ROOT,
         url: process.env.ASSET_URL
       },
+      log: {
+        level: process.env.LOG_LEVEL
+      }
       authentication: {
         secret: process.env.AUTHENTICATION_SECRET,
         remote: {
