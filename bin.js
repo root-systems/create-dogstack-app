@@ -61,8 +61,6 @@ const promptText = `
       console.log('Aborting. The following error occured:')
       console.log('  ' + err.message + '\n')
       process.exitcode = 1
-    } else {
-      console.log(res)
     }
   }
 })(argv)
