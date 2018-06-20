@@ -6,12 +6,8 @@ module.exports = function (topic) {
     import epic from './epic'
     import routes from './routes'
     import style from './style'
+    import intl from './intl'
     import Layout from './app/containers/Layout'
-
-    import appLocale from './app/locales/app'
-    import { reduce, mergeDeepRight } from 'ramda'
-    import { addLocaleData } from 'react-intl'
-    import en from 'react-intl/locale-data/en'
 
     const createBrowserEntry = require('dogstack/browser')
     const authentication = require('dogstack-agents/client')
@@ -38,16 +34,6 @@ module.exports = function (topic) {
     const root = {
       appNode: '#app',
       styleNode: '#app-styles',
-    }
-
-    // intl
-    addLocaleData([...en])
-    const locales = [
-      appLocale
-    ]
-    const messagesByLocale = reduce(mergeDeepRight, {}, locales)
-    const intl = {
-      messagesByLocale
     }
 
     createBrowserEntry({
