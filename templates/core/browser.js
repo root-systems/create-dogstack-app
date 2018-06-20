@@ -24,7 +24,7 @@ module.exports = function (topic) {
       services: [
         authentication
       ],
-      apiUrl: config.api.url
+      config
     }
 
     // root
